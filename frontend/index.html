@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<title>Kriti Gas Optimizer</title>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+
+<script>
+
+const contractAddress = "PASTE_YOUR_DEPLOYED_ADDRESS";
+
+const abi = [
+  "function executeBatch(address[] calldata recipients, uint256[] calldata amounts) external payable"
+];
+
+let provider;
+let signer;
+let contract;
+
+async function connectWallet(){
+
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+
+    await provider.send("eth_requestAccounts", []);
+
+    signer = provider.getSigner();
+
+    contract = new ethers.Contract(contractAddress, abi, signer);
+
+    alert("Wallet Connected");
+
+}
+
+async function sendBatch(){
+
+    const recipients = [
+        "0xRecipient1",
+        "0xRecipient2"
+    ];
+
+    const amounts = [
+        ethers.utils.parseEther("0.01"),
+        ethers.utils.parseEther("0.01")
+    ];
+
+    const tx = await contract.executeBatch(
+        recipients,
+        amounts,
+        {
+            value: ethers.utils.parseEther("0.02")
+        }
+    );
+
+    await tx.wait();
+
+    alert("Batch Transaction Sent!");
+
+}
+
+</script>
+
+<body>
+
+<div class="container">
+
+<h1>Kriti Gas Fee Optimizer</h1>
+
+<button id="connect">Connect Wallet</button>
+
+<p id="wallet"></p>
+
+<div class="panel">
+
+<h2>Create Meta Transaction</h2>
+
+<input id="to" placeholder="Receiver Address">
+
+<input id="value" placeholder="ETH Value">
+
+<button id="addTx">Add Transaction</button>
+
+</div>
+
+<div class="panel">
+
+<h2>Transaction Batch</h2>
+
+<ul id="txList"></ul>
+
+<button id="sendBatch">Send Batch</button>
+
+</div>
+
+<div class="panel">
+
+<h2>Gas Savings</h2>
+
+<canvas id="gasChart"></canvas>
+
+</div>
+
+</div>
+
+<script src="app.js"></script>
+<script src="dashboard.js"></script>
+
+<button onclick="connectWallet()">Connect Wallet</button>
+
+<button onclick="sendBatch()">Send Batch Transaction</button>
+
+</body>
+</html>
