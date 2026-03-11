@@ -9,7 +9,7 @@ const PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf
 
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
-const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+const CONTRACT_ADDRESS = "GIVEYOURDEPLOYEDCONTRACTADDRESSHERE";
 
 const ABI = [
   "function executeBatch(tuple(address to,uint value,bytes data)[] txs)"
