@@ -1,114 +1,99 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-<meta charset="UTF-8">
-<title>Kriti Gas Optimizer</title>
-
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
-
-<script>
-
-const contractAddress = "PASTE_YOUR_DEPLOYED_ADDRESS";
-
-const abi = [
-  "function executeBatch(address[] calldata recipients, uint256[] calldata amounts) external payable"
-];
-
-let provider;
-let signer;
-let contract;
-
-async function connectWallet(){
-
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-
-    await provider.send("eth_requestAccounts", []);
-
-    signer = provider.getSigner();
-
-    contract = new ethers.Contract(contractAddress, abi, signer);
-
-    alert("Wallet Connected");
-
-}
-
-async function sendBatch(){
-
-    const recipients = [
-        "0xRecipient1",
-        "0xRecipient2"
-    ];
-
-    const amounts = [
-        ethers.utils.parseEther("0.01"),
-        ethers.utils.parseEther("0.01")
-    ];
-
-    const tx = await contract.executeBatch(
-        recipients,
-        amounts,
-        {
-            value: ethers.utils.parseEther("0.02")
-        }
-    );
-
-    await tx.wait();
-
-    alert("Batch Transaction Sent!");
-
-}
-
-</script>
-
+    <title>Gas Saver - Dynamic Batching</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0a0a0b; --panel: #111114; --border: #1e1e24; --accent: #00ff87; --text: #e8e8ec; --mono: 'Share Tech Mono', monospace; }
+        body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; display: flex; justify-content: center; padding: 2rem; }
+        .card { width: 100%; max-width: 480px; background: var(--panel); border: 1px solid var(--border); padding: 2rem; border-radius: 4px; }
+        .log-box { background: #000; border: 1px solid var(--border); padding: 1rem; font-family: var(--mono); font-size: 0.75rem; height: 150px; overflow-y: auto; margin-top: 1rem; }
+        .btn { width: 100%; padding: 1rem; margin: 0.5rem 0; cursor: pointer; font-family: var(--mono); text-transform: uppercase; border: 1px solid var(--accent); background: rgba(0,255,135,0.1); color: var(--accent); transition: 0.2s; }
+        .btn:hover { background: rgba(0,255,135,0.2); }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .input-row { display: flex; gap: 1rem; margin: 1rem 0; }
+        .input-group { flex: 1; }
+        label { display: block; font-size: 0.65rem; color: #556; text-transform: uppercase; margin-bottom: 0.5rem; font-family: var(--mono); }
+        input { width: 100%; background: #000; border: 1px solid var(--border); padding: 0.8rem; color: var(--accent); font-family: var(--mono); outline: none; }
+    </style>
+</head>
 <body>
+    <div class="card">
+        <h2>Dynamic Batch Control</h2>
+        
+        <button class="btn" onclick="connect()">1. Connect Wallet</button>
 
-<div class="container">
+        <div class="input-row">
+            <div class="input-group">
+                <label>Amount (ETH)</label>
+                <input type="number" id="eth-amount" step="0.01" value="0.01">
+            </div>
+            <div class="input-group">
+                <label>No. of TXs</label>
+                <input type="number" id="tx-count" value="5" min="1" max="50">
+            </div>
+        </div>
 
-<h1>Kriti Gas Fee Optimizer</h1>
+        <button class="btn" id="sign-btn" onclick="signAndRelay()" disabled>2. Sign & Relay Batch</button>
+        
+        <div class="log-box" id="log-box">Waiting for system init...</div>
+    </div>
 
-<button id="connect">Connect Wallet</button>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
+    <script>
+        let signer;
+        const log = (msg) => { 
+            const box = document.getElementById('log-box');
+            box.innerHTML += `<div>> ${msg}</div>`; 
+            box.scrollTop = box.scrollHeight; 
+        };
 
-<p id="wallet"></p>
+        async function connect() {
+            if (!window.ethereum) return log("No MetaMask!");
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            signer = await provider.getSigner();
+            document.getElementById('sign-btn').disabled = false;
+            log("Connected: " + (await signer.getAddress()).slice(0,12));
+        }
 
-<div class="panel">
+        async function signAndRelay() {
+            try {
+                const address = await signer.getAddress();
+                const amount = document.getElementById('eth-amount').value;
+                const count = parseInt(document.getElementById('tx-count').value);
+                
+                const valueInWei = ethers.parseEther(amount || "0");
 
-<h2>Create Meta Transaction</h2>
+                // Generate a dynamic list based on user input
+                const txs = Array(count).fill({
+                    to: address,
+                    value: valueInWei.toString(),
+                    data: "0x"
+                });
 
-<input id="to" placeholder="Receiver Address">
+                log(`Signing for ${count} txs (${amount} ETH each)...`);
+                
+                const hash = ethers.keccak256(ethers.toUtf8Bytes("DynamicBatch_" + Date.now()));
+                const signature = await signer.signMessage(ethers.getBytes(hash));
 
-<input id="value" placeholder="ETH Value">
-
-<button id="addTx">Add Transaction</button>
-
-</div>
-
-<div class="panel">
-
-<h2>Transaction Batch</h2>
-
-<ul id="txList"></ul>
-
-<button id="sendBatch">Send Batch</button>
-
-</div>
-
-<div class="panel">
-
-<h2>Gas Savings</h2>
-
-<canvas id="gasChart"></canvas>
-
-</div>
-
-</div>
-
-<script src="app.js"></script>
-<script src="dashboard.js"></script>
-
-<button onclick="connectWallet()">Connect Wallet</button>
-
-<button onclick="sendBatch()">Send Batch Transaction</button>
-
+                log(`Relaying ${count} txs to server...`);
+                const response = await fetch("http://localhost:4000/relay", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ user: address, txs: txs, signature })
+                });
+                
+                const result = await response.json();
+                if(result.success) {
+                    log(`SUCCESS: Gas Used: ${result.gasUsed}`, 'success');
+                    log(`Hash: ${result.hash.slice(0,20)}...`);
+                } else {
+                    log("Server Error: " + result.error);
+                }
+            } catch (e) {
+                log("Error: " + e.message);
+            }
+        }
+    </script>
 </body>
 </html>
